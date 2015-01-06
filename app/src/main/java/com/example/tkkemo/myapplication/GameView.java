@@ -9,6 +9,11 @@ import android.support.v4.view.MotionEventCompat;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.Display;
+import android.graphics.Point;
+
+import android.view.WindowManager;
+import android.util.DisplayMetrics;
 
 import java.util.ArrayList;
 
@@ -50,6 +55,9 @@ public class GameView extends SurfaceView
 
         Card[] topThree;
 
+
+        // screen size
+        int screenWidth, screenHeight;
 
         private int tapX, tapY;
 
@@ -103,16 +111,6 @@ public class GameView extends SurfaceView
 
 
         private int numUpCards;
-
-
-
-
-
-
-
-
-
-
 
 
         /**
@@ -239,6 +237,11 @@ public class GameView extends SurfaceView
                 cardFaces.add(R.drawable.rd13);
 
 
+                DisplayMetrics metrics = new DisplayMetrics();
+                ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE))
+                        .getDefaultDisplay().getMetrics(metrics);
+                screenWidth = metrics.widthPixels;
+                screenHeight = metrics.heightPixels;
             }
         }
 
@@ -670,7 +673,7 @@ public class GameView extends SurfaceView
                                 }
                                 i++;
                                 i = i % 11;
-                                if(i == 6)
+                                if(i == 7)
                                 {
                                     stack = -1;
                                     break;
