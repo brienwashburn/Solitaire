@@ -660,7 +660,9 @@ public class GameView extends SurfaceView
                             int i = 7;
                             while(true)
                             {
-                                if (g.canMoveCard(stack, ind, i))
+                                if((stack > 10) || stack == -1)
+                                    break;
+                                else if (g.canMoveCard(stack, ind, i))
                                 {
                                     setInitXY(i);
                                     break;

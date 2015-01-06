@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/Solitaire.iml" filepath="$PROJECT_DIR$/Solitaire.iml" />
       <module fileurl="file://$PROJECT_DIR$/SuperSolitaire.iml" filepath="$PROJECT_DIR$/SuperSolitaire.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
