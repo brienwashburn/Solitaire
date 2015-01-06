@@ -124,6 +124,11 @@ public class Game {
         return deck.get(list).remove(ind);
     }
 
+    public Card removeFourList(int list, int ind) {
+        if (list > 10 || list < 7) { throw new IndexOutOfBoundsException(); }
+        return deck.get(list).remove(ind);
+    }
+
     public boolean isEmptySevenList(int list) {
         if (list > 6 || list < 0) { throw new IndexOutOfBoundsException(); }
         return deck.get(list).isEmpty();
@@ -239,10 +244,13 @@ public class Game {
         }
         else
         {
+
             if(canMoveCard(from, fromIndex, to))
             {
+                // if the from list is greater than 6, remove from the four lists; otherwise, remove from seven lists
                 while(fromIndex < (deck.get(from).size()))
-                { deck.get(to).add(removeSevenList(from, fromIndex)); }
+                { deck.get(to).add((from > 6) ? removeFourList(from, fromIndex) : removeSevenList(from, fromIndex)); }
+
 
                 /* if the list you pulled from still has a card on it, flip that card. (If it is already flipped
 		        it won't hurt to do it again.) */
