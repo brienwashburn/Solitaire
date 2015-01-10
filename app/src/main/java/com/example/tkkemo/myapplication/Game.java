@@ -86,16 +86,15 @@ public class Game {
         deck.get(12).add(card);
     }
 
-    public Card getDrawList(int ind) {
-        return deck.get(11).get(ind);
-    }
+    public Card getDrawList(int ind) { return deck.get(11).get(ind); }
 
-    public Card getDeck(int stack, int ind) {
-        return deck.get(stack).get(ind);
-    }
+    public Card getDeck(int list, int ind) { return deck.get(list).get(ind); }
 
-    public int sizeDeck(int stack) {
-        return deck.get(stack).size();
+    // used only when undoing a move
+    public Card unconditionalRemove(int list, int ind) { return deck.get(list).remove(ind); }
+
+    public int sizeDeck(int list) {
+        return deck.get(list).size();
     }
 
 
@@ -129,7 +128,7 @@ public class Game {
         return deck.get(list).remove(ind);
     }
 
-    public boolean isEmptySevenList(int list) {
+    public boolean sevenListIsEmpty(int list) {
         if (list > 6 || list < 0) { throw new IndexOutOfBoundsException(); }
         return deck.get(list).isEmpty();
     }
@@ -232,12 +231,24 @@ public class Game {
 //    }
 
     /**
+     * Unconditionally move a card when undo is set in GameView.
+     * @param from
+     * @param fromIndex
+     * @param to
+     */
+    public void unconditionalUndoMove(int from, int fromIndex, int to)
+    {
+        while(fromIndex < (deck.get(from).size()))
+            deck.get(to).add(unconditionalRemove(from, fromIndex));
+    }
+
+    /**
      * It is important to remember that during console testing you need to use zero indexing
      * so everything isn't off by one.
      */
     public void moveCard(int from, int fromIndex, int to)
     {
-        if(from == 11) {// if we are moving from face-up deck
+        if(from == 11) { // if we are moving from face-up deck
             if (canMoveCard(from, fromIndex, to)) {
                 deck.get(to).add(deck.get(11).remove(deck.get(11).size() - 1));
             }
@@ -249,7 +260,7 @@ public class Game {
             {
                 // if the from list is greater than 6, remove from the four lists; otherwise, remove from seven lists
                 while(fromIndex < (deck.get(from).size()))
-                { deck.get(to).add((from > 6) ? removeFourList(from, fromIndex) : removeSevenList(from, fromIndex)); }
+                    deck.get(to).add((from > 6) ? removeFourList(from, fromIndex) : removeSevenList(from, fromIndex));
 
 
                 /* if the list you pulled from still has a card on it, flip that card. (If it is already flipped
@@ -260,14 +271,13 @@ public class Game {
         }
     }
 
+
     /**
-     * from is index of the list in sevenLists to move card from, fromIndex is the index
-     * within that list that the moving card resides, and to is the index of the to list
-     * in sevenLists.
-     *
-     * THE WAY THIS IS ORGANIZED IS RIDICULOUS—REWRITE IT LATER.
-     *
-     * Return boolean indicating whether a card can be moved from one stack to another.
+     * Determine if the card selected can be moved to the list specified.
+     * @param from
+     * @param fromIndex
+     * @param to
+     * @return
      */
     public boolean canMoveCard(int from, int fromIndex, int to)
     {	// get the cards being moved & being moved to

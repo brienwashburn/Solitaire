@@ -22,12 +22,6 @@ public class Card {
         this.graphicIndex = graphicIndex;
     }
 
-    /**
-     * Toggles the variable faceUp to true.
-     */
-    public void show()
-    { this.faceUp = true; }
-
     public int getX()
     { return x; }
 
@@ -52,11 +46,18 @@ public class Card {
 
     public void setY(int y)
     { this.y = y; }
+
     /**
      * Turn the card face up once it has been dealt.
      */
     public void flip()
     { faceUp = true; }
+
+    /**
+     * This is used only when undo moves. Otherwise, flip is used.
+     */
+    public void undoFlip()
+    { faceUp = false; }
 
     /**
      * @return provide value of the faceUp variable.
