@@ -6,31 +6,31 @@ import java.util.LinkedList;
 public class Game {
 
 
-    private int draw, deckIndex;
     private LinkedList<Card> orderedList;
-    private java.util.Random randomGen;
+
 
     //0-6 are the main game stacks
     //7-10 are the final stacks/ace stacks
     //11 is the draw stack
     //12 is the down stack
     private ArrayList<LinkedList<Card>> deck;
-    private final String[] suitImmutable = {"S", "H", "C", "D",};
-    private final int[] valuesImmutable = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-            11, 12, 13};
     private final int[] dealIndices = {0, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 2,
             3, 4, 5, 6, 3, 4, 5, 6, 4, 5, 6, 5, 6, 6};
 
-    private boolean flipDeck;
+
 
 
     public Game()
     {
         orderedList = new LinkedList<Card>();
         deck = new ArrayList<LinkedList<Card>>();
-        deckIndex = 0;
 
-        String color = "";
+        // suits and values to generate each card
+        final String[] suitImmutable = {"S", "H", "C", "D",};
+        final int[] valuesImmutable = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                11, 12, 13};
+
+        String color;
         for(int i = 0 ; i < 4 ; i++)
             for(int j = 0 ; j < 13 ; j++)
             {
@@ -40,8 +40,6 @@ public class Game {
             }
 
         for (int i = 0 ; i < 13; i++) deck.add(new LinkedList<Card>());
-
-        flipDeck = false;
 
 
         shuffle();
@@ -55,6 +53,8 @@ public class Game {
      */
     public void shuffle()
     {
+        java.util.Random randomGen;
+
         randomGen = new java.util.Random();
         // allow people to shuffle the deck multiple times before dealing
         LinkedList<Card> preShuffleDeck = deck.get(12).size() == 0 ? orderedList : DownList();
@@ -70,14 +70,6 @@ public class Game {
         return deck.get(12).poll();
     }
 
-    public Card getDownList(int ind) {
-        return deck.get(12).get(ind);
-    }
-
-    public Card removeDownList(int ind) {
-        return deck.get(12).remove(ind);
-    }
-
     public LinkedList<Card> DownList() {
         return deck.get(12);
     }
@@ -89,6 +81,8 @@ public class Game {
     public Card getDrawList(int ind) { return deck.get(11).get(ind); }
 
     public Card getDeck(int list, int ind) { return deck.get(list).get(ind); }
+
+    public Card getDownList(int ind) { return deck.get(12).get(ind); }
 
     // used only when undoing a move
     public Card unconditionalRemove(int list, int ind) { return deck.get(list).remove(ind); }
@@ -128,19 +122,9 @@ public class Game {
         return deck.get(list).remove(ind);
     }
 
-    public boolean sevenListIsEmpty(int list) {
-        if (list > 6 || list < 0) { throw new IndexOutOfBoundsException(); }
-        return deck.get(list).isEmpty();
-    }
-
     public int sizeFourList(int list ) {
         if (list > 10 || list < 7) { throw new IndexOutOfBoundsException(); }
         return deck.get(list).size();
-    }
-
-    public Card getLastFourList(int list) {
-        if (list > 10 || list < 7) { throw new IndexOutOfBoundsException(); }
-        return deck.get(list).getLast();
     }
 
     public int sizeDownList() {
@@ -164,20 +148,6 @@ public class Game {
         for (int f = 0 ; f < 7 ; f ++)
             deck.get(f).getLast().flip();
     }
-
-
-    public int getDeckIndex()
-    { return deckIndex; }
-    /**
-     * getter takes int i for the index of the card stack
-     * you want, returns that stacks size
-     * @param i
-     * @return
-     */
-    public int listSize(int i) {
-        return deck.get(i).size();
-    }
-
 
     /**
      * Pulls the next card in the deck. We might need to modify this in the graphical version.
@@ -329,20 +299,6 @@ public class Game {
                 return false;
 
         return true;
-    }
-
-    /**
-     * @return true if the top card on each of the final four stacks is a king.
-     */
-    public boolean done()
-    {//s
-        for(int i = 7 ; i < 11 ; i++)
-            if((sizeFourList(i)) == 0 ||
-                    (getLastFourList(i).getValue() != 13))
-                return false;
-
-        return true;
-
     }
 }
 
