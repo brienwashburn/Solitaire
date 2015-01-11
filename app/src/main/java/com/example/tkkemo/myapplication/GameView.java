@@ -482,6 +482,15 @@ public class GameView extends SurfaceView
                 d.draw(canvas);
             }
 
+            right = canvasWidth - border;
+            left = right - buttonWidth;
+            bottom = canvasHeight - 3*border;
+            top = bottom - buttonHeight;
+
+            Drawable und = ctx.getResources().getDrawable(R.drawable.undo);
+            und.setBounds(left, top, right, bottom);
+            und.draw(canvas);
+
             //redraw the carried stack so that it animates on top of other stacks
             if (stack >= 0 && stack < 7 && ind >= 0) {
                 drawStack(canvas, stack);
@@ -490,15 +499,6 @@ public class GameView extends SurfaceView
             if (g.finalConditions())
                 doStart();
 
-            right = canvasWidth - border;
-            left = right - buttonWidth;
-            bottom = canvasHeight - border;
-            top = bottom - buttonHeight;
-
-
-            Drawable und = ctx.getResources().getDrawable(R.drawable.undo);
-            und.setBounds(left, top, right, bottom);
-            und.draw(canvas);
         }
 
 
@@ -836,15 +836,27 @@ public class GameView extends SurfaceView
          */
         public void undoTouch(double x, double y)
         {
+            int right = canvasWidth - border;
+            int left = right - buttonWidth;
+            int bottom = canvasHeight - 3*border;
+            int top = bottom - buttonHeight;
             // for now, make the entire bottom half of the screen the undo button
             if(!setUndo)
             {
-                setUndo = (y > (canvasHeight / 2)) ? true : false;
+                if ( y > top && y < bottom && x > left && x < right)
+                    setUndo = true;
+                else
+                    setUndo = false;
+
                 undo = false;
             }
             else
             {
-                setUndo = (y > (canvasHeight / 2)) ? true : false;
+                if ( y > top && y < bottom && x > left && x < right)
+                    setUndo = true;
+                else
+                    setUndo = false;
+
                 if(setUndo)
                     undo = true;
             }
