@@ -41,6 +41,11 @@ public class GameView extends SurfaceView
 
         private boolean setUndo; // if true, set undo once the the cursor is released on the undo button
         private boolean undo; // undo the last move
+
+
+        private boolean setRestart; // if true, set undo once the the cursor is released on the undo button
+        private boolean restart; // undo the last move
+
         private Stack<Move> moveStack; // used to undo card movement
         private int undoX, undoY; // come from the card before it is moved so it can easily be undone
 
@@ -435,27 +440,37 @@ public class GameView extends SurfaceView
 
             if (stack == 12) {
                 for (int i = 0; i < drawSize; i++) {
-                    if (g.sizeDownList() == 0 && i == 0) {
-                        numUpCards = 0;
-                        g.nextCard();
-                        break;
-                    } else if (g.sizeDownList() == 0 && i == 1) {
-                        numUpCards = 1;
-                        break;
-                    } else if (g.sizeDownList() == 0 && i == 2) {
-                        numUpCards = 2;
+                    if (g.sizeDownList() == 0) {
+                        numUpCards = i;
+
+                        if(i == 0)
+                            g.nextCard();
                         break;
                     } else {
+                        if(drawSize == 1)
+                        {
+                            if(g.sizeDownList() > 0)
+                                moveStack.add(new Move(12, g.sizeUpList(), 11, g.getDownList(g.sizeDownList()-1).getX(), g.getDownList(g.sizeDownList()-1).getY(), false));
+                        }
+                        else
+                        {}
+
                         g.nextCard();
                         numUpCards = (g.sizeUpList() < 3) ? g.sizeUpList() : 3;
                     }
 
 
                 }
-                setUpLocations();
-                setDownLocations();
+
                 stack = -1;
             }
+
+            if(!snapBack)
+            {
+                setUpLocations();
+                setDownLocations();
+            }
+
 
             canvas.save();
             canvas.restore();
@@ -471,7 +486,7 @@ public class GameView extends SurfaceView
                 drawStack(canvas, i);
             }
 
-            if (stack > -1) {
+            if (ind > -1 && stack > -1) {
                 left = g.getDeck(stack, ind).getX();
                 right = left + cardWidth;
                 top = g.getDeck(stack, ind).getY();
@@ -490,6 +505,15 @@ public class GameView extends SurfaceView
             Drawable und = ctx.getResources().getDrawable(R.drawable.undo);
             und.setBounds(left, top, right, bottom);
             und.draw(canvas);
+
+            right = border + buttonWidth;
+            left = border;
+            bottom = canvasHeight - 3*border;
+            top = bottom - buttonHeight;
+
+            Drawable res = ctx.getResources().getDrawable(R.drawable.restart);
+            res.setBounds(left, top, right, bottom);
+            res.draw(canvas);
 
             //redraw the carried stack so that it animates on top of other stacks
             if (stack >= 0 && stack < 7 && ind >= 0) {
@@ -565,7 +589,6 @@ public class GameView extends SurfaceView
          */
         private void snapBack() {
 
-            //
             for (int z = ind; z < g.sizeDeck(stack); z++) {
                 g.getDeck(stack, z).addX((int) (headingX * .2));
                 g.getDeck(stack, z).addY((int) (headingY * .2));
@@ -588,7 +611,6 @@ public class GameView extends SurfaceView
                         wasFlipped = g.getDeck(stack, ind - 1).isFaceUp() ? false : true;
                     else
                         wasFlipped = false;
-                    
 
                     // public Move(int movedFrom, int movedToIndex, int movedTo, int baseX, int baseY, boolean flippedPrevious)
                     moveStack.add(new Move(stack, g.sizeDeck(recipientStack), recipientStack, undoX, undoY, wasFlipped));
@@ -615,25 +637,37 @@ public class GameView extends SurfaceView
          */
         public void undoCardMove()
         {
-            Move move = moveStack.pop();
-            int fromIndex = move.getMovedToIndex();
-            int from = move.getMovedTo();
-            int to = move.getMovedFrom();
-            int baseX = move.getBaseX();
-            int baseY = move.getBaseY();
-            boolean flipUnderCard = move.getFlippedPrevious();
+            if(moveStack.size() > 0)
+            {
+                Move move = moveStack.pop();
+                int fromIndex = move.getMovedToIndex();
+                int from = move.getMovedTo();
+                int to = move.getMovedFrom();
+                int baseX = move.getBaseX();
+                int baseY = move.getBaseY();
+                boolean flipUnderCard = move.getFlippedPrevious();
 
 
-            for (int z = fromIndex; z <= (g.sizeDeck(from) - 1); z++) {
-                g.getDeck(from, z).setX(baseX);
-                g.getDeck(from, z).setY(baseY + (z - (g.sizeDeck(from)-1)) * cardOffsetY);
+                for (int z = fromIndex; z <= (g.sizeDeck(from) - 1); z++) {
+                    g.getDeck(from, z).setX(baseX);
+                    g.getDeck(from, z).setY(baseY + (z - (g.sizeDeck(from)-1)) * cardOffsetY);
+                }
+
+                // flip the card over if flipUnderCard is set
+                if(flipUnderCard)
+                    g.getDeck(to, g.sizeDeck(to)-1).undoFlip();
+
+                g.unconditionalUndoMove(from, fromIndex, to);
+
+                if(to == 12)
+                {
+                    if(drawSize == 1)
+                        numUpCards = g.sizeUpList() > 3 ? 3 : g.sizeUpList();
+
+
+                }
             }
 
-            // flip the card over if flipUnderCard is set
-            if(flipUnderCard)
-                g.getDeck(to, g.sizeDeck(to)-1).undoFlip();
-
-            g.unconditionalUndoMove(from, fromIndex, to);
 
             setUndo = false;
             undo = false;
@@ -677,9 +711,12 @@ public class GameView extends SurfaceView
                         // check if undo is clicked
                         undoTouch(x, y);
 
+                        //check if restart is clicked
+                        restartTouch(x, y);
+
 
                         //get initial X and Y
-                        if (stack > -1 && stack < 12) {
+                        if (ind > -1 && stack > -1 && stack < 12) {
                             initialX = g.getDeck(stack, ind).getX();
                             initialY = g.getDeck(stack, ind).getY();
                         }
@@ -699,7 +736,7 @@ public class GameView extends SurfaceView
                         final int dy = y - mLastTouchY;
 
                         //code handles moving a card and the stack underneath it
-                        if (stack > -1 && stack < 12) {
+                        if (ind > -1 && stack > -1 && stack < 12) {
                             g.getDeck(stack, ind).addX(dx);
                             g.getDeck(stack, ind).addY(dy);
                             if ((g.sizeDeck(stack) - 1) > ind)
@@ -732,6 +769,9 @@ public class GameView extends SurfaceView
 
                         // check if undo is clicked
                         undoTouch(x, y);
+
+                        //check if restart is clicked
+                        restartTouch(x, y);
 
                         //auto complete if user does not drag card
                         if (Math.abs(x - tapX) < 10 && Math.abs(y - tapY) < 10) {
@@ -841,7 +881,6 @@ public class GameView extends SurfaceView
             int left = right - buttonWidth;
             int bottom = canvasHeight - 3*border;
             int top = bottom - buttonHeight;
-
             // for now, make the entire bottom half of the screen the undo button
             if(!setUndo)
             {
@@ -852,7 +891,6 @@ public class GameView extends SurfaceView
 
                 undo = false;
             }
-
             else
             {
                 if ( y > top && y < bottom && x > left && x < right)
@@ -866,6 +904,36 @@ public class GameView extends SurfaceView
 
 
         }
+
+
+       public void restartTouch(double x, double y)  {
+           int right = border + buttonWidth;
+           int left = border;
+           int bottom = canvasHeight - 3*border;
+           int top = bottom - buttonHeight;
+
+           // for now, make the entire bottom half of the screen the undo button
+           if(!setRestart)
+           {
+               if ( y > top && y < bottom && x > left && x < right)
+                   setRestart = true;
+               else
+                   setRestart = false;
+
+               restart = false;
+           }
+
+           else
+           {
+               if ( y > top && y < bottom && x > left && x < right)
+                   doStart();
+               else
+                   setRestart = false;
+
+               if(setRestart)
+                   restart = true;
+           }
+       }
 
         /**
          * Return the index and the stack of the card touched when appropriate.
