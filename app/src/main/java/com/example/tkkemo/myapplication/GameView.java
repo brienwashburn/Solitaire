@@ -435,27 +435,37 @@ public class GameView extends SurfaceView
 
             if (stack == 12) {
                 for (int i = 0; i < drawSize; i++) {
-                    if (g.sizeDownList() == 0 && i == 0) {
-                        numUpCards = 0;
-                        g.nextCard();
-                        break;
-                    } else if (g.sizeDownList() == 0 && i == 1) {
-                        numUpCards = 1;
-                        break;
-                    } else if (g.sizeDownList() == 0 && i == 2) {
-                        numUpCards = 2;
+                    if (g.sizeDownList() == 0) {
+                        numUpCards = i;
+
+                        if(i == 0)
+                            g.nextCard();
                         break;
                     } else {
+                        if(drawSize == 1)
+                        {
+                            if(g.sizeDownList() > 0)
+                                moveStack.add(new Move(12, g.sizeUpList(), 11, g.getDownList(g.sizeDownList()-1).getX(), g.getDownList(g.sizeDownList()-1).getY(), false));
+                        }
+                        else
+                        {}
+
                         g.nextCard();
                         numUpCards = (g.sizeUpList() < 3) ? g.sizeUpList() : 3;
                     }
 
 
                 }
-                setUpLocations();
-                setDownLocations();
+
                 stack = -1;
             }
+
+            if(!snapBack)
+            {
+                setUpLocations();
+                setDownLocations();
+            }
+
 
             canvas.save();
             canvas.restore();
@@ -471,7 +481,7 @@ public class GameView extends SurfaceView
                 drawStack(canvas, i);
             }
 
-            if (stack > -1) {
+            if (ind > -1 && stack > -1) {
                 left = g.getDeck(stack, ind).getX();
                 right = left + cardWidth;
                 top = g.getDeck(stack, ind).getY();
@@ -614,25 +624,37 @@ public class GameView extends SurfaceView
          */
         public void undoCardMove()
         {
-            Move move = moveStack.pop();
-            int fromIndex = move.getMovedToIndex();
-            int from = move.getMovedTo();
-            int to = move.getMovedFrom();
-            int baseX = move.getBaseX();
-            int baseY = move.getBaseY();
-            boolean flipUnderCard = move.getFlippedPrevious();
+            if(moveStack.size() > 0)
+            {
+                Move move = moveStack.pop();
+                int fromIndex = move.getMovedToIndex();
+                int from = move.getMovedTo();
+                int to = move.getMovedFrom();
+                int baseX = move.getBaseX();
+                int baseY = move.getBaseY();
+                boolean flipUnderCard = move.getFlippedPrevious();
 
 
-            for (int z = fromIndex; z <= (g.sizeDeck(from) - 1); z++) {
-                g.getDeck(from, z).setX(baseX);
-                g.getDeck(from, z).setY(baseY + (z - (g.sizeDeck(from)-1)) * cardOffsetY);
+                for (int z = fromIndex; z <= (g.sizeDeck(from) - 1); z++) {
+                    g.getDeck(from, z).setX(baseX);
+                    g.getDeck(from, z).setY(baseY + (z - (g.sizeDeck(from)-1)) * cardOffsetY);
+                }
+
+                // flip the card over if flipUnderCard is set
+                if(flipUnderCard)
+                    g.getDeck(to, g.sizeDeck(to)-1).undoFlip();
+
+                g.unconditionalUndoMove(from, fromIndex, to);
+
+                if(to == 12)
+                {
+                    if(drawSize == 1)
+                        numUpCards = g.sizeUpList() > 3 ? 3 : g.sizeUpList();
+
+
+                }
             }
 
-            // flip the card over if flipUnderCard is set
-            if(flipUnderCard)
-                g.getDeck(to, g.sizeDeck(to)-1).undoFlip();
-
-            g.unconditionalUndoMove(from, fromIndex, to);
 
             setUndo = false;
             undo = false;
@@ -678,7 +700,7 @@ public class GameView extends SurfaceView
 
 
                         //get initial X and Y
-                        if (stack > -1 && stack < 12) {
+                        if (ind > -1 && stack > -1 && stack < 12) {
                             initialX = g.getDeck(stack, ind).getX();
                             initialY = g.getDeck(stack, ind).getY();
                         }
@@ -698,7 +720,7 @@ public class GameView extends SurfaceView
                         final int dy = y - mLastTouchY;
 
                         //code handles moving a card and the stack underneath it
-                        if (stack > -1 && stack < 12) {
+                        if (ind > -1 && stack > -1 && stack < 12) {
                             g.getDeck(stack, ind).addX(dx);
                             g.getDeck(stack, ind).addY(dy);
                             if ((g.sizeDeck(stack) - 1) > ind)
