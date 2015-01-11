@@ -3,10 +3,8 @@ package com.example.tkkemo.myapplication;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.support.v4.view.MotionEventCompat;
-import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -36,8 +34,7 @@ public class GameView extends SurfaceView
         //game object that controls logic for the game
         private Game g;
         private int drawSize;
-        private boolean run = false, pullCards = false, deckMove = false;
-        private boolean animateDeckOnly = false;
+        private boolean run = false;
 
         private boolean setUndo; // if true, set undo once the the cursor is released on the undo button
         private boolean undo; // undo the last move
@@ -48,10 +45,8 @@ public class GameView extends SurfaceView
         //variables used for dealing with card touches, etc.
 
         //index of the current card being touched
-        private int ind = -1, recipientInd = -1, deckCardIndex = -1;
+        private int ind = -1;
         private int stack = -1, recipientStack = -1;
-
-        private int numCards, cardsAvailable;
 
         Card[] topThree;
 
@@ -85,8 +80,6 @@ public class GameView extends SurfaceView
         private int deckFaceUpCardOffsetY = 5;
 
         private boolean deal;
-        private int dealSt;
-        private int dealIn;
 
         //used with touch events stores the pointer ID and constant for inv pointerID
         private static final int INVALID_POINTER_ID = -1;
@@ -102,12 +95,6 @@ public class GameView extends SurfaceView
         private final int fourY = 5;
 
         private ArrayList<Integer> cardFaces;
-        private ArrayList<Card> faceUpDeckCards;
-
-
-        private int finalFourX;
-        private int finalFourStack = -1;
-
 
         private int numUpCards;
 
@@ -160,16 +147,13 @@ public class GameView extends SurfaceView
                 numUpCards = 0;
 
                 topThree = new Card[3];
+
                 // initialize drawSize to 3 for now
                 drawSize = 1;
-                numCards = 0;
 
                 // used for tap-moving cards
                 tapX = 0;
                 tapY = 0;
-
-                // how many cards are face up next to the deck
-                cardsAvailable = 0;
 
                 //initialize the stack locations
                 stackX = new int[7];
@@ -181,11 +165,6 @@ public class GameView extends SurfaceView
                 for (int q = 0; q < 4; q++) {
                     fourX[q] = stackX[q + 3];
                 }
-
-                finalFourX = stackX[3];
-
-                dealSt = 0;
-                dealIn = 0;
 
                 int initX, initY;
                 initX = deckCanvasOffsetX + deckOffsetX * 3;
@@ -201,7 +180,6 @@ public class GameView extends SurfaceView
                 //sets the correct starting positions for cards in the seven stacks
 
                 cardFaces = new ArrayList<Integer>();
-                faceUpDeckCards = new ArrayList<Card>();
 
                 //adding drawable items
                 cardFaces.add(R.drawable.bs1);
@@ -376,6 +354,10 @@ public class GameView extends SurfaceView
             }
         }
 
+        /**
+         * Draw the UI.
+         * @param canvas thang
+         */
         private void doDraw(Canvas canvas) {
             if (undo)
                 undoCardMove(); // undo the last move
@@ -383,8 +365,6 @@ public class GameView extends SurfaceView
             int left, top, bottom, right;
             if (snapBack)
                 snapBack();
-
-
 
             if (deal) {
                 int headX, headY, initX, initY;
@@ -402,19 +382,36 @@ public class GameView extends SurfaceView
 
             }
 
+            // flip cards from the face-down deck
             if (stack == 12) {
                 for (int i = 0; i < drawSize; i++) {
-                    if (g.sizeDownList() == 0 && i == 0) {
-                        numUpCards = 0;
-                        g.nextCard();
-                        break;
-                    } else if (g.sizeDownList() == 0 && i == 1) {
-                        numUpCards = 1;
-                        break;
-                    } else if (g.sizeDownList() == 0 && i == 2) {
-                        numUpCards = 2;
+                    if (g.sizeDownList() == 0) {
+                        if(i == 0)
+                        {
+                            // add the Move to moveStack here, before you move the card
+                            if(g.sizeDownList() > 0)
+                                moveStack.add(new Move(12, g.sizeDownList(), 11, g.getDeck(12, g.sizeDownList()-1).getX(), g.getDeck(12, g.sizeDownList()-1).getY(), false));
+                            g.nextCard();
+                        }
+
+
+                        numUpCards = i;
                         break;
                     } else {
+                        // Move created for undo functionality
+                        if(drawSize == 1)
+                        {
+                            // int position = (g.sizeDownList() > 3) ? 3 : g.sizeDownList();
+                            // public Move(int movedFrom, int movedToIndex, int movedTo, int baseX, int baseY, boolean flippedPrevious)
+                            if(g.sizeDownList() > 0)
+                                moveStack.add(new Move(12, g.sizeDownList(), 11, g.getDeck(12, g.sizeDownList()-1).getX(), g.getDeck(12, g.sizeDownList()-1).getY(), false));
+                        }
+                        else
+                        {
+                            // Setup draw three here
+
+                        }
+
                         g.nextCard();
                         numUpCards = (g.sizeUpList() < 3) ? g.sizeUpList() : 3;
                     }
@@ -439,12 +436,12 @@ public class GameView extends SurfaceView
                 drawStack(canvas, i);
             }
 
-            if (stack > -1) {
+            if (stack > -1 && ind > -1) {
                 left = g.getDeck(stack, ind).getX();
                 right = left + cardWidth;
                 top = g.getDeck(stack, ind).getY();
                 bottom = top + cardHeight;
-                // draw the next card
+                // draw the next cards
                 Drawable d = ctx.getResources().getDrawable(cardFaces.get(g.getDeck(stack, ind).getGraInd()));
                 d.setBounds(left, top, right, bottom);
                 d.draw(canvas);
@@ -470,7 +467,7 @@ public class GameView extends SurfaceView
             // deckIndex to 0, while returning null.
 
 
-            int drawDeckCards = 0;
+            int drawDeckCards;
 
             if (g.sizeDownList() > 3)
                 drawDeckCards = 3;
@@ -530,8 +527,6 @@ public class GameView extends SurfaceView
          * Snap back to the old location if the card could not move or snap to the recipient stack if it can move.
          */
         private void snapBack() {
-
-            //
             for (int z = ind; z < g.sizeDeck(stack); z++) {
                 g.getDeck(stack, z).addX((int) (headingX * .2));
                 g.getDeck(stack, z).addY((int) (headingY * .2));
@@ -565,7 +560,6 @@ public class GameView extends SurfaceView
                         numUpCards--;
                 }
 
-                deckMove = false;
                 snapBack = false;
                 stack = -1;
                 recipientStack = -1;
@@ -579,25 +573,29 @@ public class GameView extends SurfaceView
          */
         public void undoCardMove()
         {
-            Move move = moveStack.pop();
-            int fromIndex = move.getMovedToIndex();
-            int from = move.getMovedTo();
-            int to = move.getMovedFrom();
-            int baseX = move.getBaseX();
-            int baseY = move.getBaseY();
-            boolean flipUnderCard = move.getFlippedPrevious();
+            Move move; // create a Move object to take the last move off the moveStack so it can be undone
+            if(moveStack.size() > 0) {
+                move = moveStack.pop();
+
+                int fromIndex = move.getMovedToIndex();
+                int from = move.getMovedTo();
+                int to = move.getMovedFrom();
+                int baseX = move.getBaseX();
+                int baseY = move.getBaseY();
+                boolean flipUnderCard = move.getFlippedPrevious();
 
 
-            for (int z = fromIndex; z <= (g.sizeDeck(from) - 1); z++) {
-                g.getDeck(from, z).setX(baseX);
-                g.getDeck(from, z).setY(baseY + (z - (g.sizeDeck(from)-1)) * cardOffsetY);
+                for (int z = fromIndex; z <= (g.sizeDeck(from) - 1); z++) {
+                    g.getDeck(from, z).setX(baseX);
+                    g.getDeck(from, z).setY(baseY + (z - (g.sizeDeck(from) - 1)) * cardOffsetY);
+                }
+
+                // flip the card over if flipUnderCard is set
+                if (flipUnderCard)
+                    g.getDeck(to, g.sizeDeck(to) - 1).undoFlip();
+
+                g.unconditionalUndoMove(from, fromIndex, to);
             }
-
-            // flip the card over if flipUnderCard is set
-            if(flipUnderCard)
-                g.getDeck(to, g.sizeDeck(to)-1).undoFlip();
-
-            g.unconditionalUndoMove(from, fromIndex, to);
 
             setUndo = false;
             undo = false;
@@ -617,6 +615,7 @@ public class GameView extends SurfaceView
                 c = sh.lockCanvas(null);
 
 
+                // evaluate touch action
                 switch (action) {
                     case MotionEvent.ACTION_DOWN: {
                         final int pointerIndex = MotionEventCompat.getActionIndex(e);
@@ -643,7 +642,7 @@ public class GameView extends SurfaceView
 
 
                         //get initial X and Y
-                        if (stack > -1 && stack < 12) {
+                        if (stack > -1 && stack < 12 && ind > -1) {
                             initialX = g.getDeck(stack, ind).getX();
                             initialY = g.getDeck(stack, ind).getY();
                         }
@@ -698,7 +697,7 @@ public class GameView extends SurfaceView
                         undoTouch(x, y);
 
                         //auto complete if user does not drag card
-                        if (Math.abs(x - tapX) < 10 && Math.abs(y - tapY) < 10) {
+                        if (ind > -1 && (Math.abs(x - tapX) < 10) && (Math.abs(y - tapY) < 10)) {
 
                             int i = 7;
                             while (true) {
@@ -719,42 +718,11 @@ public class GameView extends SurfaceView
                                 }
                             }
                         }
+                        //use recipientStack as the test to see if our card is hovering over another card.
+                      else if (ind > -1 && stack > -1 && recipientStack != -1 && recipientStack < 12 && g.canMoveCard(stack, ind, recipientStack))
+                      { setInitXY(recipientStack); }
 
-
-
-
-
-
-
-
-
-
-                                                      // WHAT IS THIS FOR? //
-
-
-
-
-
-                        // use recipientStack as the test to see if our card is hovering over another card.
-//                      else if (recipientStack != -1 && recipientStack < 12 && g.canMoveCard(stack, ind, recipientStack))
-//                      { setInitXY(recipientStack); }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                        if (stack != -1 && stack < 12) {
+                        if (ind > -1 && stack != -1 && stack < 12) {
                             headingX = initialX - g.getDeck(stack, ind).getX();
                             headingY = initialY - g.getDeck(stack, ind).getY();
                             snapBack = true;
@@ -848,6 +816,20 @@ public class GameView extends SurfaceView
         }
 
         /**
+         * Set the XY coordinates for the Move object generated for undo functionality.
+         * @param stack
+         * @param ind
+         */
+        public void setUndoXY(int stack, int ind)
+        {
+            if(stack != -1 && (g.sizeDeck(stack) > 0))
+            {
+                undoX = g.getDeck(stack, ind).getX();
+                undoY = g.getDeck(stack, ind).getY();
+            }
+        }
+
+        /**
          * Return the index and the stack of the card touched when appropriate.
          * @param x
          * @param y
@@ -871,13 +853,7 @@ public class GameView extends SurfaceView
                     ind = g.sizeSevenList(stack) - 1;
                 }
 
-
-                if(stack != -1)
-                {
-                    undoX = g.getDeck(stack, ind).getX();
-                    undoY = g.getDeck(stack, ind).getY();
-                }
-
+                setUndoXY(stack, ind);
                 return;
             }
 
@@ -903,11 +879,7 @@ public class GameView extends SurfaceView
             }
 
             // set the coordinates of the card's corresponding Move so the movement can be undone
-            if(stack != -1)
-            {
-                undoX = g.getDeck(stack, ind).getX();
-                undoY = g.getDeck(stack, ind).getY();
-            }
+            setUndoXY(stack, ind);
         }
 
         /**
@@ -1008,29 +980,12 @@ public class GameView extends SurfaceView
                 return 11;
             return -1;
         }
-
-
-        /**
-         * For now, you can touch anywhere on the three-card deck to get cards.
-         * @param x
-         * @param y
-         */
-        public void cardTouchDeck(double x, double y)
-        {
-            pullCards = false;
-            if (x > deckCanvasOffsetX && x < (deckCanvasOffsetX + cardWidth + 2*deckOffsetX) &&
-                    y > deckCanvasOffsetY && y < (deckCanvasOffsetY + cardHeight + 2*deckOffsetY))
-            { pullCards = true; }
-        }
-
-
     }
 
     private Context ctx;
     BubbleThread thread;
 
     private SurfaceHolder sh;
-    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
 
     public GameView(Context context) {
@@ -1040,9 +995,6 @@ public class GameView extends SurfaceView
 
         ctx = context;
         setFocusable(true);
-    }
-    public BubbleThread getThread() {
-        return thread;
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
@@ -1071,8 +1023,7 @@ public class GameView extends SurfaceView
             try {
                 thread.join();
                 retry = false;
-            } catch (InterruptedException e) {
-            }
+            } catch (InterruptedException e) {}
         }
     }
 
