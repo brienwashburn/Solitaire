@@ -82,6 +82,8 @@ public class Game {
 
     public Card getDeck(int list, int ind) { return deck.get(list).get(ind); }
 
+    public Card getDownList(int ind) { return deck.get(12).get(ind); }
+
     // used only when undoing a move
     public Card unconditionalRemove(int list, int ind) { return deck.get(list).remove(ind); }
 
