@@ -588,6 +588,7 @@ public class GameView extends SurfaceView
                         wasFlipped = g.getDeck(stack, ind - 1).isFaceUp() ? false : true;
                     else
                         wasFlipped = false;
+                    
 
                     // public Move(int movedFrom, int movedToIndex, int movedTo, int baseX, int baseY, boolean flippedPrevious)
                     moveStack.add(new Move(stack, g.sizeDeck(recipientStack), recipientStack, undoX, undoY, wasFlipped));
@@ -840,6 +841,7 @@ public class GameView extends SurfaceView
             int left = right - buttonWidth;
             int bottom = canvasHeight - 3*border;
             int top = bottom - buttonHeight;
+
             // for now, make the entire bottom half of the screen the undo button
             if(!setUndo)
             {
@@ -850,6 +852,7 @@ public class GameView extends SurfaceView
 
                 undo = false;
             }
+
             else
             {
                 if ( y > top && y < bottom && x > left && x < right)
